@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafePass Generator</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --text: #1a1a1a;
+            --accent: #007aff;
+            --card: #f5f5f7;
+            --strength-bg: #e0e0e0;
+        }
+        [data-theme="dark"] {
+            --bg: #121212;
+            --text: #f5f5f7;
+            --accent: #0a84ff;
+            --card: #1e1e1e;
+            --strength-bg: #333;
+        }
+        body {
+            font-family: -apple-system, system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            transition: 0.3s;
+        }
+        .container {
+            width: 90%;
+            max-width: 380px;
+            padding: 24px;
+            background: var(--card);
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .theme-toggle {
+            cursor: pointer;
+            background: var(--bg);
+            border: 1px solid #ccc;
+            color: var(--text);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .input-group {
+            margin-bottom: 16px;
+        }
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: var(--bg);
+            color: var(--text);
+            box-sizing: border-box;
+            outline: none;
+        }
+        .result-container {
+            margin-top: 24px;
+            padding: 16px;
+            background: var(--bg);
+            border-radius: 16px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        #result {
+            word-break: break-all;
+            font-family: 'SF Mono', Menlo, monospace;
+            font-size: 18px;
+            letter-spacing: 1px;
+            text-align: center;
+            min-height: 24px;
+        }
+        /* Шкала сложности */
+        .strength-meter {
+            height: 4px;
+            width: 100%;
+            background: var(--strength-bg);
+            margin-top: 12px;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        #strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: 0.4s ease;
+            background: #ff3b30;
+        }
+        button.primary {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: opacity 0.2s;
+        }
+        button.primary:active { opacity: 0.8; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body data-theme="light">
+
+<div class="container">
+    <div class="header">
+        <h2 style="margin:0; font-size: 20px;">Ключ</h2>
+        <button class="theme-toggle" onclick="toggleTheme()">🌓 Тема</button>
+    </div>
+
+    <!-- Скрытая форма для системных менеджеров паролей -->
+    <form id="saveForm" class="hidden" onsubmit="return false;">
+        <input type="text" name="username" value="User">
+        <input type="password" id="hiddenPass" name="password" autocomplete="new-password">
+    </form>
+
+    <div class="input-group">
+        <label>Длина <span>(символов)</span></label>
+        <input type="number" id="len" value="16" min="4" max="50">
+    </div>
+    <div class="input-group">
+        <label>Спецсимволы <span>(!@#)</span></label>
+        <input type="number" id="spec" value="2">
+    </div>
+    <div class="input-group">
+        <label>Заглавные <span>(ABC)</span></label>
+        <input type="number" id="upper" value="2">
+    </div>
+    <div class="input-group">
+        <label>Цифры <span>(123)</span></label>
+        <input type="number" id="nums" value="2">
+    </div>
+
+    <button class="primary" onclick="generate()">Сгенерировать</button>
+
+    <div class="result-container">
+        <div id="result">нажми создать</div>
+        <div class="strength-meter">
+            <div id="strength-bar"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleTheme() {
+        const body = document.body;
+        const current = body.getAttribute('data-theme');
+        body.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+    }
+
+    function updateStrength(pwd) {
+        const bar = document.getElementById('strength-bar');
+        let score = 0;
+        
+        if (pwd.length > 8) score += 25;
+        if (pwd.length > 12) score += 25;
+        if (/[A-Z]/.test(pwd)) score += 15;
+        if (/[0-9]/.test(pwd)) score += 15;
+        if (/[^A-Za-z0-9]/.test(pwd)) score += 20;
+
+        bar.style.width = score + '%';
+        
+        if (score < 40) bar.style.background = '#ff3b30'; // Красный
+        else if (score < 70) bar.style.background = '#ffcc00'; // Желтый
+        else bar.style.background = '#34c759'; // Зеленый
+    }
+
+    function generate() {
+        const len = parseInt(document.getElementById('len').value) || 12;
+        const nSpec = parseInt(document.getElementById('spec').value) || 0;
+        const nUpper = parseInt(document.getElementById('upper').value) || 0;
+        const nNums = parseInt(document.getElementById('nums').value) || 0;
+
+        const chars = "abcdefghijklmnopqrstuvwxyz";
+        const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const nums = "0123456789";
+        const specs = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+
+        let password = [];
+
+        // Гарантированные символы
+        for(let i=0; i<nSpec; i++) password.push(specs[Math.floor(Math.random()*specs.length)]);
+        for(let i=0; i<nUpper; i++) password.push(upper[Math.floor(Math.random()*upper.length)]);
+        for(let i=0; i<nNums; i++) password.push(nums[Math.floor(Math.random()*nums.length)]);
+        
+        // Остальное
+        while(password.length < len) {
+            password.push(chars[Math.floor(Math.random()*chars.length)]);
+        }
+
+        // Перемешивание (Fisher-Yates)
+        for (let i = password.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [password[i], password[j]] = [password[j], password[i]];
+        }
+
+        const finalPass = password.join('');
+        
+        // Вывод
+        document.getElementById('result').innerText = finalPass;
+        updateStrength(finalPass);
+        
+        // Копирование
+        navigator.clipboard.writeText(finalPass);
+
+        // Магия для предложения сохранить пароль
+        const hiddenPass = document.getElementById('hiddenPass');
+        hiddenPass.value = finalPass;
+        
+        // Имитируем ввод для некоторых браузеров
+        hiddenPass.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+</script>
+
+</body>
+</html>
