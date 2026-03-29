@@ -14,18 +14,12 @@
             --strength-bg: #333; --border: rgba(255,255,255,0.05); --toast-bg: #7c4dff;
         }
 
-        @keyframes fastLoad {
-            0% { opacity: 0; filter: blur(15px); transform: scale(1.02); }
-            100% { opacity: 1; filter: blur(0); transform: scale(1.0); }
-        }
-
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
             background-color: var(--bg); color: var(--text);
             display: flex; justify-content: center; align-items: flex-start;
             min-height: 100vh; margin: 0; padding: 20px 0;
-            animation: fastLoad 0.5s ease-out forwards;
-            overflow-x: hidden; transition: 0.3s;
+            transition: 0.3s;
         }
 
         .container {
@@ -54,6 +48,16 @@
         }
 
         .input-group { margin-bottom: 12px; }
+        
+        /* Горизонтальная группа для ника и чекбокса */
+        .horizontal-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .horizontal-group .input-wrap { flex: 1; }
+        
         label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; opacity: 0.8; }
         
         input {
@@ -61,25 +65,26 @@
             background: var(--bg); color: var(--text); box-sizing: border-box; outline: none;
         }
 
+        /* Контейнер кнопок */
+        .btn-container { margin-top: 12px; }
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
         .result-container {
             margin-top: 20px; padding: 16px; background: var(--bg);
             border-radius: 16px; border: 1px solid var(--border); text-align: center;
-            cursor: pointer; transition: 0.2s;
+            cursor: pointer; transition: 0.2s; position: relative;
         }
         .result-container:hover { border-color: var(--accent); }
-        #result { font-family: 'SF Mono', monospace; font-size: 16px; word-break: break-all; min-height: 24px; color: var(--text); }
+        #result { font-family: 'SF Mono', monospace; font-size: 14px; word-break: break-all; min-height: 24px; color: var(--text); }
         
         button.primary {
             width: 100%; padding: 16px; background: var(--accent); color: white;
-            border: none; border-radius: 16px; font-weight: 600; cursor: pointer; margin-top: 12px;
+            border: none; border-radius: 16px; font-weight: 600; cursor: pointer;
         }
-
-        .mail-wrapper {
-            margin-top: 15px; border-radius: 16px; overflow: hidden;
-            border: 1px solid var(--border); height: 500px; display: none;
-            background: #fff;
-        }
-        iframe { width: 100%; height: 100%; border: none; }
 
         #toast {
             position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
@@ -99,6 +104,8 @@
         .strength-meter { height: 4px; width: 100%; background: var(--strength-bg); margin-top: 10px; border-radius: 2px; overflow: hidden; }
         #strength-bar { height: 100%; width: 0%; transition: 0.4s; }
         .hidden { display: none !important; }
+        
+        .mail-hint { font-size: 11px; text-align: center; color: var(--accent); margin-top: 12px; line-height: 1.4; }
     </style>
 </head>
 <body data-theme="dark">
@@ -122,26 +129,37 @@
         <div class="input-group"><label>Спецсимволы</label><input type="number" id="spec" value="2"></div>
         <div class="input-group"><label>Заглавные</label><input type="number" id="upper" value="2"></div>
         <div class="input-group"><label>Цифры</label><input type="number" id="nums" value="2"></div>
-        <button class="primary" onclick="handleGenPass()">Создать и копировать</button>
+        <div class="btn-container">
+            <button class="primary" onclick="handleGenPass()">Создать и копировать</button>
+        </div>
     </div>
 
     <div id="nick-section" class="hidden">
-        <div class="input-group"><label>Ключевое слово</label><input type="text" id="keyword" placeholder="ghost"></div>
-        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; margin-top:10px;">
-            <input type="checkbox" id="random-case" checked> Random Case (cYbEr)
-        </label>
-        <button class="primary" onclick="handleGenNick()">Создать ник</button>
-        <button id="add-pass-btn" class="primary hidden" onclick="genPassForNick()">Пароль к нему</button>
+        <div class="horizontal-group">
+            <div class="input-wrap">
+                <label>Ключевое слово</label>
+                <input type="text" id="keyword" placeholder="ghost">
+            </div>
+            <label style="display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer; width: auto; opacity: 1; margin-top: 18px;">
+                <input type="checkbox" id="random-case" style="width:18px; height:18px; margin:0;" checked>
+                <span style="font-size:10px; text-align:center; line-height:1;">Random Case</span>
+            </label>
+        </div>
+        
+        <div class="btn-container">
+            <button id="gen-nick-btn" class="primary" onclick="handleGenNick()">Создать ник</button>
+            <div id="nick-step-2" class="btn-row hidden">
+                <button class="primary" onclick="handleGenNick()">Новый ник</button>
+                <button class="primary" onclick="genPassForNick()">Пароль к нему</button>
+            </div>
+        </div>
     </div>
 
     <div id="mail-section" class="hidden">
-        <button class="primary" onclick="initMail()">🌐 Активировать ящик</button>
-        <p style="font-size: 11px; text-align: center; color: var(--accent); margin-top: 8px;">
-            1. Скопируй адрес внутри ящика.<br>
-            2. Кликни на поле результата ниже, чтобы сохранить его.
-        </p>
-        <div id="mail-container" class="mail-wrapper">
-            <iframe id="mail-iframe" src=""></iframe>
+        <button class="primary" onclick="initMail()">🌐 Открыть Guerrilla Mail</button>
+        <div class="mail-hint">
+            1. Скопируй адрес в открывшейся вкладке.<br>
+            2. Кликни на поле «••••••••» ниже, чтобы сохранить его.
         </div>
     </div>
 
@@ -171,8 +189,6 @@
         gothic: ["Grave", "Shadow", "Soul", "Grim", "Dark", "Ghost", "Lullaby", "Abyss", "Bleak", "Silent", "Crow", "Raven", "Funeral", "Night", "Death", "Mist", "Moon", "Bone", "Blood", "Doom", "Curse", "Epitaph", "Relic"],
         anime: ["Kawaii", "Senpai", "Sama", "Chan", "Haze", "Moon", "Sakura", "Spirit", "Echo", "Mirai", "Yume", "Aura", "Mochi", "Chibi", "Kami", "Sora", "Umi", "Kira", "Neko", "Shinobi", "Ronin", "Kaiju"],
         space: ["Nova", "Orion", "Quasar", "Pulsar", "Nebula", "Astro", "Cosmo", "Lunar", "Solar", "Orbit", "Void", "Star", "Comet", "Drift", "Eclipse"],
-        myth: ["Zeus", "Hades", "Odin", "Thor", "Loki", "Ares", "Valkyrie", "Fenrir", "Titan", "Gaia", "Nyx", "Chaos", "Hydra", "Anubis", "Osiris"],
-        techno: ["Volt", "Amp", "Flux", "Core", "Node", "Link", "Fuse", "Bolt", "Spark", "Flow", "Pulse", "Warp", "Apex"],
         post: ["Witch", "Error", "Demon", "Angel", "Blade", "Star", "Zero", "Punk", "Core", "Vain", "Lord", "Killer", "Soul", "God", "Dust", "Ash", "Storm", "Rebel", "X"]
     };
 
@@ -183,7 +199,6 @@
         localStorage.setItem('theme', nt);
     }
 
-    // ИСПРАВЛЕННАЯ ФУНКЦИЯ ПЕРЕКЛЮЧЕНИЯ
     function switchTab(type) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         if(event) event.target.classList.add('active');
@@ -192,19 +207,17 @@
         document.getElementById('nick-section').classList.toggle('hidden', type !== 'nick');
         document.getElementById('mail-section').classList.toggle('hidden', type !== 'mail');
         
-        const resWrap = document.getElementById('result-wrapper');
+        if(type === 'nick') resetNickUI();
+
         const resDiv = document.getElementById('result');
-        const bar = document.getElementById('strength-bar');
-
-        // Очищаем результат при смене вкладки, чтобы не висела "Загрузка"
         resDiv.innerText = "••••••••";
-        bar.style.width = '0%';
-
-        // Показываем индикатор сложности только в паролях
+        document.getElementById('strength-bar').style.width = '0%';
         document.getElementById('strength-wrap').classList.toggle('hidden', type !== 'pass');
-        
-        // Скрываем всё поле результата, если мы в "Почте", пока там нет импортированного адреса
-        resWrap.classList.toggle('hidden', type === 'mail');
+    }
+
+    function resetNickUI() {
+        document.getElementById('gen-nick-btn').classList.remove('hidden');
+        document.getElementById('nick-step-2').classList.add('hidden');
     }
 
     function showToast(text = "Скопировано!") {
@@ -213,43 +226,39 @@
         setTimeout(() => { t.style.display = 'none'; }, 2000);
     }
 
-    // ПОЧТА
     function initMail() {
-        const iframe = document.getElementById('mail-iframe');
-        const container = document.getElementById('mail-container');
-        const resWrap = document.getElementById('result-wrapper');
-        const resDiv = document.getElementById('result');
-
-        // Когда нажимаем активацию, показываем поле результата с подсказкой
-        resWrap.classList.remove('hidden');
-        resDiv.innerText = "Ожидание импорта...";
-        
-        container.style.display = 'block';
-        iframe.src = "https://www.guerrillamail.com/inbox"; 
+        window.open("https://www.guerrillamail.com/", "_blank");
+        document.getElementById('result').innerText = "Кликни для импорта почты из буфера";
+        showToast("Сервис открыт в новой вкладке!");
     }
 
-    // КОПИРОВАНИЕ И ИМПОРТ
     function copyResult() {
         const resDiv = document.getElementById('result');
         const text = resDiv.innerText;
 
-        if(text.includes("Ожидание") || text === "••••••••") {
+        if(text === "••••••••" || text.includes("Кликни") || text.includes("импорта")) {
             navigator.clipboard.readText().then(clip => {
-                if(clip.includes('@')) {
-                    resDiv.innerText = clip;
-                    saveToHistory("Почта", clip);
-                    showToast("Адрес импортирован!");
+                const clean = clip.trim();
+                if(clean.includes('@') && !clean.includes('<') && clean.length < 100) {
+                    resDiv.innerText = clean;
+                    saveToHistory("Почта", clean);
+                    showToast("Почта импортирована!");
                 } else {
-                    showToast("Скопируй адрес в ящике!");
+                    showToast("В буфере нет адреса почты!");
                 }
-            }).catch(() => showToast("Нужен доступ к буферу!"));
+            }).catch(() => {
+                const manual = prompt("Вставь адрес почты вручную:");
+                if(manual && manual.includes('@')) {
+                    resDiv.innerText = manual;
+                    saveToHistory("Почта", manual);
+                }
+            });
             return;
         }
 
         navigator.clipboard.writeText(text).then(() => showToast());
     }
 
-    // ГЕНЕРАЦИЯ ПАРОЛЯ
     function genPassLogic() {
         const l = +document.getElementById('len').value, s = +document.getElementById('spec').value, 
               u = +document.getElementById('upper').value, n = +document.getElementById('nums').value;
@@ -275,35 +284,36 @@
         navigator.clipboard.writeText(p).then(() => showToast());
     }
 
-    // ГЕНЕРАЦИЯ НИКА
     function handleGenNick() {
         const key = document.getElementById('keyword').value.trim();
         const allPre = Object.values(WORDS).flat();
-        const decorations = ["xX_ _Xx", "† _ †", "v_v", "｡ _ ｡", "- _ -", "[ _ ]", "666_ _666"];
-        
+        const decs = ["xX_ _Xx", "† _ †", "v_v", "｡ _ ｡", "- _ -", "[ _ ]", "666_ _666"];
         let nick = key ? (Math.random() > 0.5 ? key + WORDS.post[Math.floor(Math.random()*WORDS.post.length)] : allPre[Math.floor(Math.random()*allPre.length)] + key) 
                        : allPre[Math.floor(Math.random()*allPre.length)] + WORDS.post[Math.floor(Math.random()*WORDS.post.length)];
         
-        if(Math.random() > 0.7) nick = decorations[Math.floor(Math.random()*decorations.length)].replace("_", nick);
-
+        if(Math.random() > 0.7) nick = decs[Math.floor(Math.random()*decs.length)].replace("_", nick);
+        
         if(document.getElementById('random-case').checked) {
             nick = nick.split('').map(c => Math.random() > 0.5 ? c.toUpperCase() : c.toLowerCase()).join('');
         }
+        
         currentNick = nick;
         document.getElementById('result').innerText = nick;
-        document.getElementById('add-pass-btn').classList.remove('hidden');
+        
+        document.getElementById('gen-nick-btn').classList.add('hidden');
+        document.getElementById('nick-step-2').classList.remove('hidden');
+        
         navigator.clipboard.writeText(nick).then(() => showToast("Ник скопирован!"));
     }
 
     function genPassForNick() {
         const p = genPassLogic();
         saveToHistory(currentNick, p);
-        document.getElementById('result').innerHTML = `<span style="color:var(--accent)">${currentNick}</span> (${p})`;
-        document.getElementById('add-pass-btn').classList.add('hidden');
+        document.getElementById('result').innerHTML = `<span style="color:var(--accent)">${currentNick}</span><br><small style="opacity:0.7">${p}</small>`;
+        resetNickUI();
         navigator.clipboard.writeText(p).then(() => showToast("Пароль скопирован!"));
     }
 
-    // ИСТОРИЯ
     function saveToHistory(label, val) {
         let h = JSON.parse(localStorage.getItem('gen_history') || '[]');
         h.unshift({ id: Date.now(), label, val, time: new Date().toLocaleTimeString() });
